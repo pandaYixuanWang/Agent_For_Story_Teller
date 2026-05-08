@@ -95,7 +95,7 @@ The system block diagram is in [`diagram.md`](diagram.md).
    pip install -r requirements.txt
    ```
 
-3. **Set your OpenAI API key** — create a `.env` file in the project root:
+3. **Set your OpenAI API key** — copy `.env.example` to `.env` and fill in your key:
    ```
    OPENAI_API_KEY=sk-...
    ```
@@ -103,15 +103,12 @@ The system block diagram is in [`diagram.md`](diagram.md).
 
 ### Usage
 
-**User-Facing Mode** (default) — prints only the final polished story:
+Run the script and enter your story idea when prompted:
 ```bash
 python main.py
 ```
 
-**Demo / Debug Mode** — shows the full agentic loop (drafts, judge scores, revisions):
-```bash
-python main.py --debug
-```
+To see the full agentic loop (drafts, judge scores, revisions), set `DEBUG = True` at the top of `main.py`.
 
 ### Example
 
