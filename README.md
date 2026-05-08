@@ -48,3 +48,82 @@ No more than 2-3 hours
 Sure
 - How long should the story be?
 You decide
+
+---
+
+## My Solution
+
+### Architecture
+
+This system implements a **multi-agent draft-judge-refine loop** built on top of `gpt-3.5-turbo`:
+
+```
+User Input → Storyteller (Draft) → Judge → [APPROVED] → Output
+                    ↑                  |
+                    └── Storyteller ←──┘ [REVISION_NEEDED, up to 3 iterations]
+                        (Refine)
+```
+
+Three specialised agents collaborate, each given a carefully engineered system prompt:
+
+| Agent | Role |
+|---|---|
+| **Storyteller (Draft Mode)** | Writes the initial bedtime story from the user's request |
+| **Judge** | Scores the draft 0–10 across 7 rubric criteria and returns `APPROVED` or `REVISION_NEEDED` with specific, actionable feedback |
+| **Storyteller (Refine Mode)** | Revises the draft using the Judge's critique while preserving the original premise |
+| **Main Controller** | Orchestrates the loop, enforces a score guardrail (≥ 8/10 required), and caps iterations at 3 |
+
+The system block diagram is in [`diagram.md`](diagram.md).
+
+### Key Design Decisions
+
+- **Score guardrail**: even if the Judge outputs `APPROVED`, the Main Controller re-checks the numeric score and forces `REVISION_NEEDED` if it is below 8/10 — preventing a lenient model from bypassing the quality bar.
+- **Prompt injection defence**: user input is wrapped in `<user_request>` XML tags with an explicit framing instruction, reducing the risk of prompt injection overriding the system prompt.
+- **Separate draft vs. refine prompts**: the draft prompt optimises for imagination and tone; the refine prompt specifically instructs the model to address the judge's critique without losing the original charm.
+- **Judge rubric**: seven criteria (alignment, age appropriateness, bedtime tone, engagement, structure, emotional resolution, length) keep feedback concrete and consistent.
+
+### Setup
+
+1. **Clone the repo**
+   ```bash
+   git clone <repo-url>
+   cd Agent_For_Story_Teller
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Set your OpenAI API key** — create a `.env` file in the project root:
+   ```
+   OPENAI_API_KEY=sk-...
+   ```
+   > ⚠️ Never commit this file. It is already in `.gitignore`.
+
+### Usage
+
+**User-Facing Mode** (default) — prints only the final polished story:
+```bash
+python main.py
+```
+
+**Demo / Debug Mode** — shows the full agentic loop (drafts, judge scores, revisions):
+```bash
+python main.py --debug
+```
+
+### Example
+
+```
+$ python main.py
+Welcome to the AI Storyteller System!
+What kind of story do you want to hear? A brave little snail who wants to climb a mountain
+
+========================================
+FINAL STORY:
+========================================
+# The Brave Little Snail
+
+...
+```
